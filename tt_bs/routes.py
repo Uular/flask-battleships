@@ -1,7 +1,6 @@
 from flask import jsonify, request, abort
 from tt_bs import app, db
-from .resources import list_teams, shoot_square, get_game
-from .models import Game
+from .models import Game, Square, Team
 
 BASE_GAME = '/api/<string:game_name>/'
 
@@ -12,35 +11,37 @@ def hello_world():
 
 
 @app.route(BASE_GAME)
-def game(game_name):
+def get_game(game_name):
     game = get_game_or_abort(game_name)
-    return game
+    teams = [team.as_dict() for team in Team.query.filter_by(game_name=game_name).all()]
+    squares = [square.as_dict() for square in Square.query.filter_by(game_name=game_name).filter(Square.shot_team_name != None).all()]
+    return jsonify(name=game.name, teams=teams, squares=squares)
 
 
-@app.route(BASE_GAME + 'teams', methods=['GET'])
-def get_squares(game_name):
+@app.route(BASE_GAME + 'shoot', methods=['POST'])
+def shoot(game_name):
     game = get_game_or_abort(game_name)
-    return jsonify(type='teams', list=list_teams(game))
+    try:
+        team = request.args['team']
+        x = request.args['x']
+        y = request.args['y']
+    except KeyError:
+        abort(400)
+        return
 
+    square = Square.query.filter_by(x=x, y=y).first()
+    if square:
+        if square.ship_team and square.shot_team:
+            pass
 
-@app.route(BASE_GAME + 'squares', methods=['GET', 'POST'])
-def shoot():
-    game = get_game_or_abort(game_name)
-    if request.method == 'POST':
-        try:
-            team = request.args['team']
-            x = request.args['x']
-            y = request.args['y']
-        except KeyError:
-            abort(400)
-        shot_square = Square()
-    else:
-        pass
-
-
-def get_game_or_abort(game):
-    game = get_game(game)
+def get_game_or_abort(game_name):
+    game = Game.query.filter_by(name=game_name).first()
     if not game:
-        abort(404)
+        abort(404, 'Game with name \'{}\' was not found'.format(game_name))
     else:
         return game
+
+@app.errorhandler(404)
+def error_404(error):
+    response = jsonify(error=404, message=error.description)
+    return response, 404
