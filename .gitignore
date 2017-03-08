@@ -1,3 +1,5 @@
+.idea/
 db_repo/
 app.db
 warning.log
+*.pyc
