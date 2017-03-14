@@ -1,5 +1,6 @@
 from flask import jsonify, request, abort
-from tt_bs import app, db
+
+from tt_bs import app, db, limiter
 from .models import Game, Square, Team
 
 BASE_GAME = '/api/<string:game_name>/'
@@ -7,19 +8,44 @@ BASE_GAME = '/api/<string:game_name>/'
 
 @app.route('/')
 def hello_world():
-    return 'Hello World!'
+    return app.send_static_file('index.html')
 
 
 @app.route(BASE_GAME)
 def get_game(game_name):
     game = get_game_or_abort(game_name)
     teams = [team.as_dict() for team in Team.query.filter_by(game_name=game_name).all()]
-    squares = [square.as_dict() for square in Square.query.filter_by(game_name=game_name)
-        .filter(Square.shot_team_name != None).all()]
-    return jsonify(name=game.name, teams=teams, squares=squares)
+    squares = [square.as_dict() for square in Square.query
+                    .filter_by(game_name=game_name)
+                    .filter(Square.shot_team_name != None).all()]
+    width = game.width
+    height = game.height
+    return jsonify(name=game.name, teams=teams, squares=squares, width=width, height=height)
 
+@app.route(BASE_GAME + 'squares', methods=['GET'])
+def squares(game_name):
+    game = get_game_or_abort(game_name)
+    try:
+        xmin = int(request.args['xmin'])
+        ymin = int(request.args['ymin'])
+        xmax = int(request.args['xmax'])
+        ymax = int(request.args['ymax'])
+        if xmin > xmax or ymin > ymax \
+                or abs(xmin - xmax) * abs(ymin - ymax) > 100000:
+            raise ValueError()
+    except (KeyError, ValueError):
+        abort(400)
+        return
+
+    squares = Square.query.filter(
+        db.and_(Square.x.between(xmin, xmax),
+                Square.y.between(ymin, ymax),
+                Square.shot_team_name != None)
+    ).all()
+    return jsonify(squares=[square.as_dict() for square in squares])
 
 @app.route(BASE_GAME + 'shoot', methods=['POST'])
+@limiter.limit("10 per minute")
 def shoot(game_name):
     game = get_game_or_abort(game_name)
     try:
@@ -30,22 +56,27 @@ def shoot(game_name):
         abort(400)
         return
 
-    team = Team.query.filter_by(name=team_name).first()
-    if not team:
-        abort(404, "Team '{}' not found for this game".format(team_name))
+    team = get_team_or_abort(game_name, team_name)
 
-    square = Square.query.filter_by(x=x, y=y).first()
+    square = Square.query.filter_by(game=game, x=x, y=y).first()
     if square:
-        if square.ship_team:
-            if not square.shot_team:
-                square.shot_team = team
-                db.session.add(square)
-                db.session.commit()
-                return jsonify(square=square.as_dict(), hit=True), 200
-            else:
-                return jsonify(square=square.as_dict(), hit=False), 200
-    return "", 204
+        if not square.shot_team and square.ship_team:
+            square.game = game
+            square.shot_team = team
+            db.session.add(square)
+            db.session.commit()
+            return jsonify(square=square.as_dict(), hit=True)
+    else:
+        square = Square(game, x, y, shot=team)
+        db.session.add(square)
+        db.session.commit()
+    return jsonify(square=square.as_dict(), hit=False)
 
+@app.route(BASE_GAME + 'teams', methods=['GET'])
+def teams(game_name):
+    game = get_game_or_abort(game_name)
+    teams = Team.query.filter_by(game=game).all()
+    return jsonify(teams=[team.as_dict() for team in teams])
 
 def get_game_or_abort(game_name):
     game = Game.query.filter_by(name=game_name).first()
@@ -56,6 +87,8 @@ def get_game_or_abort(game_name):
 
 
 def get_team_or_abort(game_name, team_name):
-    team = Game.query.filter_by(name=team_name, game_name=game_name).first()
+    team = Team.query.filter_by(name=team_name, game_name=game_name).first()
     if not team:
         abort(404, 'Team with name \'{}\' was not found'.format(team_name))
+    else:
+        return team

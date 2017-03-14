@@ -21,12 +21,15 @@ class Team(db.Model):
     __tablename__ = 'team'
 
     name = db.Column(db.String(255), primary_key=True)
+    color = db.Column(db.String(32), default="#00FF00")
     game_name = db.Column(db.String(255), db.ForeignKey('game.name'), primary_key=True)
     game = db.relationship("Game", foreign_keys=[game_name], back_populates="teams")
 
-    def __init__(self, game, name=""):
+    def __init__(self, game, name="", color=None):
         self.game = game
         self.name = name
+        if color:
+            self.color = color
 
     @hybrid_property
     def points(self):
@@ -35,7 +38,8 @@ class Team(db.Model):
     def as_dict(self):
         return {
             'name': self.name,
-            'points': self.points
+            'points': self.points,
+            'color': self.color
         }
 
 
@@ -47,19 +51,20 @@ class Square(db.Model):
     game_name = db.Column(db.String(255), db.ForeignKey('game.name'), primary_key=True)
     game = db.relationship("Game", back_populates="squares")
 
-    ship_team_name = db.Column(db.String(255), db.ForeignKey('team.name'), nullable=False)
+    ship_team_name = db.Column(db.String(255), db.ForeignKey('team.name'), nullable=True)
     ship_team = db.relationship("Team", foreign_keys=[ship_team_name], backref="ships")
 
     shot_team_name = db.Column(db.String(255), db.ForeignKey('team.name'), nullable=True)
     shot_team = db.relationship("Team", foreign_keys=[shot_team_name], backref="shots")
 
-    def __init__(self, game, x=0, y=0, team=None):
+    def __init__(self, game, x=0, y=0, team=None, shot=None):
         self.game = game
         x = max(min(x, game.width-1), 0)
         y = max(min(y, game.height-1), 0)
         self.x = x
         self.y = y
         self.ship_team = team
+        self.shot_team = shot
 
     def as_dict(self):
         return {

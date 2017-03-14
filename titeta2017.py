@@ -17,10 +17,10 @@ if not game:
     db.session.add(game)
     db.session.commit()
 
-for team_name in gs.TEAMS:
+for team_name, color in gs.TEAMS:
     team = Team.query.filter_by(name=team_name).first()
     if not team:
-        team = Team(game, team_name)
+        team = Team(game, team_name, color=color)
         db.session.add(team)
         db.session.commit()
 
