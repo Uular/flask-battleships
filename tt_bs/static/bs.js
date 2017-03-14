@@ -207,10 +207,12 @@ var client = {
                         var shot = JSON.parse(this.responseText)
                         if (shot.hit) {
                             if (shot.square.team == client.team) {
-                                failure(200, "Hups, ammuit omaa tiimiä!");
+                                failure(200, "Hups, ammuit omaa tiimiä :b");
                             } else {
                                 success("Jes, osuma :D");
                             }
+                        } else {
+                            failure(200, "Harmi, ei onnea tällä kertaa :C");
                         }
                         board.squares.push(shot.square);
                         board.render();
@@ -220,7 +222,7 @@ var client = {
                         failure(204, "Ei mittään :(");
                         break;
                     case 429:
-                        failure(429, "Nyt ammut ihan liian nopeeta!");
+                        failure(429, "Nyt ammut kyllä ihan liian nopeeta >:O");
                         break;
                     default:
                         failure(this.status, "Jotakin meni pieleen :/");
