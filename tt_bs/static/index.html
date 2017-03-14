@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="static/style.css">
+    <script type="text/javascript" src="static/jquery-3.1.1.slim.min.js"></script>
+</head>
+<body>
+<div id="container">
+    <div id="info-header">
+        <ul id="teams">
+
+        </ul>
+        <h1>x: <span id="x">0</span></h1>
+        <h1>y: <span id="y">0</span></h1>
+        <button id="shoot" disabled="true">Shoot!</button>
+        <span id="info">Select a square to shoot!</span>
+    </div>
+    <div id="board-container">
+        <canvas id="board"></canvas>
+    </div>
+</div>
+</body>
+
+<script type="text/javascript" src="static/bs.js"></script>
+<script type="text/javascript">
+    board.displayCoords = function(x, y, selected) {
+        $("#x").text(x);
+        $("#y").text(y);
+        $("#shoot").prop("disabled", !selected);
+    }
+    function updateTeamList(teams, myteam) {
+        var list = document.getElementById("teams");
+        list.innerHTML = "";
+        for (i = 0; i < teams.length; i++) {
+            // Create the list item:
+            var item = document.createElement('li');
+            // Set its contents:
+            const name = teams[i].name;
+            var points = teams[i].points;
+            var color = teams[i].color;
+            item.appendChild(document.createTextNode(name + ": " + points));
+            item.style.borderColor = color;
+            if (name == myteam) {
+                item.style.background = color;
+                item.style.color = "white";
+            }
+            item.addEventListener("click", function() {
+                $("#teams li").css("background","inherit").css("color","inherit");
+                $(this).css("color","white");
+                $(this).css("background", $(this).css("borderColor"));
+                client.selectTeam(name);
+            });
+            list.appendChild(item);
+        }
+    }
+
+    gameSuccess = function(game) {
+        updateTeamList(game.teams, null);
+    };
+
+    const successMessage = function(message) { // Success
+            $("#info").css("color", "green").text(message);
+    };
+    const failureMessage = function(code, message) { // Failure
+            $("#info").css("color", "red").text(message);
+    };
+
+    $("#shoot").click(function() {
+        board.shootSelected(successMessage, failureMessage)
+    });
+    client.init("api/", "titeta2017");
+    client.fetchGame(gameSuccess);
+    client.teamsCallback = updateTeamList;
+</script>
+</html>
