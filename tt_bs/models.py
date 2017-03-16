@@ -33,7 +33,15 @@ class Team(db.Model):
 
     @hybrid_property
     def points(self):
-        return len(self.ships) + len(self.shots)
+        n = 0
+        for s in self.ships:
+            if not s.shot_team:
+                n += 1
+        for s in self.shots:
+            if s.ship_team:
+                n += 1
+
+        return n
 
     def as_dict(self):
         return {
