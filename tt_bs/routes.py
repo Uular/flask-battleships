@@ -1,4 +1,5 @@
 from flask import jsonify, request, abort
+import requests
 
 from tt_bs import app, db, limiter
 from .models import Game, Square, Team
@@ -52,9 +53,15 @@ def shoot(game_name):
         team_name = request.args['team']
         x = int(request.args['x'])
         y = int(request.args['y'])
+        captcha = request.args['recaptcha_response_field']
     except (KeyError, ValueError):
         abort(400)
         return
+
+    if not validate_captcha(captcha):
+        abort(403, "Captcha validation failed")
+        return
+
 
     team = get_team_or_abort(game_name, team_name)
 
@@ -92,3 +99,13 @@ def get_team_or_abort(game_name, team_name):
         abort(404, 'Team with name \'{}\' was not found'.format(team_name))
     else:
         return team
+
+
+def validate_captcha(captcha):
+    r = requests.post("https://www.google.com/recaptcha/api/siteverify", data={
+        "secret": app.config["RECAPTCHA_PRIVATE_KEY"],
+        "response": captcha
+    })
+
+    response = r.json()
+    return response['success']

@@ -15,7 +15,7 @@ CORS(app)
 limiter = Limiter(
     app,
     key_func=get_remote_address,
-    global_limits=["2000 per day", "200 per hour"]
+    global_limits=["200000 per day"]
 )
 
 db = SQLAlchemy(app)

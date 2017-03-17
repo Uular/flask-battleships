@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>KillanUpotus</title>
     <link rel="stylesheet" type="text/css" href="static/style.css">
     <script type="text/javascript" src="static/jquery-3.1.1.slim.min.js"></script>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
 </head>
 <body>
 <div id="container">
@@ -12,9 +13,13 @@
         <ul id="teams">
 
         </ul>
-        <h1>x: <span id="x">0</span></h1>
-        <h1>y: <span id="y">0</span></h1>
-        <button id="shoot" disabled="true">Shoot!</button>
+        <form id="shot" action="titeta2017/shoot" method="post">
+            <input name="team" type="hidden" readonly="readonly">
+            <h1>x: <input type="number" readonly="readonly" name="x" value="0"></h1>
+            <h1>y: <input type="number" readonly="readonly" name="y" value="0"></h1>
+            <div class="g-recaptcha" data-theme="dark" data-sitekey="6Lf7URkUAAAAAPSLqnmvSEjQ17RX573UvgLGE4J_" style="transform:scale(0.75);-webkit-transform:scale(0.75);transform-origin:0 0;-webkit-transform-origin:0 0;"></div>
+            <button id="shoot" disabled="true">Shoot!</button>
+        </form>
         <span id="info">Select a square to shoot!</span>
     </div>
     <div id="board-container">
@@ -26,8 +31,8 @@
 <script type="text/javascript" src="static/bs.js"></script>
 <script type="text/javascript">
     board.displayCoords = function(x, y, selected) {
-        $("#x").text(x);
-        $("#y").text(y);
+        $("input[name='x']").val(x);
+        $("input[name='y']").val(y);
         $("#shoot").prop("disabled", !selected);
     }
     function updateTeamList(teams, myteam) {
@@ -50,6 +55,7 @@
                 $("#teams li").css("background","inherit").css("color","inherit");
                 $(this).css("color","white");
                 $(this).css("background", $(this).css("borderColor"));
+                $("input[name='team']").val(name);
                 client.selectTeam(name);
             });
             list.appendChild(item);
@@ -68,7 +74,8 @@
     };
 
     $("#shoot").click(function() {
-        board.shootSelected(successMessage, failureMessage)
+        var captcha = $("#g-recaptcha-response").val();
+        board.shootSelected(captcha, successMessage, failureMessage)
     });
     client.init("api/", "titeta2017");
     client.fetchGame(gameSuccess);

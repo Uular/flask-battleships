@@ -4,7 +4,7 @@ var context = canvas.getContext('2d');
 var board = {
     w: 0,
     h: 0,
-    gridSize: 20,
+    gridSize: 35,
     tX: 20,
     tY: 20,
     mouseX: 0,
@@ -163,9 +163,9 @@ var board = {
         context.strokeStyle = color;
         context.stroke();
     },
-    shootSelected: function(success, failure) {
+    shootSelected: function(captcha, success, failure) {
         if (board.selectedSquare) {
-            client.shoot(selectedSquare.x, selectedSquare.y, success, failure);
+            client.shoot(selectedSquare.x, selectedSquare.y, captcha, success, failure);
             board.shots.push({x: selectedSquare.x, y: selectedSquare.y});
         }
         board.selectedSquare = null;
@@ -194,7 +194,7 @@ var client = {
         xhttp.open("GET", this.endpoint + this.game, true);
         xhttp.send();
     },
-    shoot: function(x, y, success, failure) {
+    shoot: function(x, y, captcha, success, failure) {
         if (!client.team) {
             failure(400, "Et ole valinnut tiimiä :O");
             return;
@@ -229,7 +229,7 @@ var client = {
                 }
             }
         };
-        xhttp.open("POST", this.endpoint + this.game + "/shoot?team=" + this.team + "&x=" + x + "&y=" + y, true);
+        xhttp.open("POST", this.endpoint + this.game + "/shoot?team=" + this.team + "&x=" + x + "&y=" + y + "&recaptcha_response_field=" + captcha, true);
         xhttp.send();
     },
     getSquares: function(x1, y1, x2, y2, callback) {

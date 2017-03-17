@@ -59,6 +59,16 @@ li {
     border: 2px solid limegreen;
 
 }
+
+input {
+    background-color: transparent;
+    font-size: 24pt;
+    border: 0px solid;
+    height: 24pt;
+    width: 160px;
+    color: #11ee11;
+}
+
 #board-container {
 flex: 1;
 }
