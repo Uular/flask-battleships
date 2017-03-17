@@ -67,10 +67,12 @@
     };
 
     const successMessage = function(message) { // Success
-            $("#info").css("color", "green").text(message);
+        $("#info").css("color", "green").text(message);
+        grecaptcha.reset();
     };
     const failureMessage = function(code, message) { // Failure
-            $("#info").css("color", "red").text(message);
+        $("#info").css("color", "red").text(message);
+        grecaptcha.reset();
     };
 
     $("#shoot").click(function() {
