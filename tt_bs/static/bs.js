@@ -221,6 +221,8 @@ var client = {
                     case 204:
                         failure(204, "Ei mittään :(");
                         break;
+                    case 403:
+                        failure(403, "Yritä nyt ees vähän ihmismäisempi olla");
                     case 429:
                         failure(429, "Nyt ammut kyllä ihan liian nopeeta >:O");
                         break;
