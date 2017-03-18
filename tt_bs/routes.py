@@ -1,14 +1,18 @@
 from flask import jsonify, request, abort
 import requests
+from datetime import datetime
 
 from tt_bs import app, db, limiter
 from .models import Game, Square, Team
 
 BASE_GAME = '/api/<string:game_name>/'
 
+START_TIME = datetime(2017, 3, 16, 22, 00)
 
 @app.route('/')
 def hello_world():
+    if (datetime.now() < START_TIME):
+        return "Peli ei ole vielä alkanut!"
     return app.send_static_file('index.html')
 
 
@@ -71,6 +75,10 @@ def shoot(game_name):
             square.game = game
             square.shot_team = team
             db.session.add(square)
+            team.score += 1
+            square.ship_team.score -= 1
+            db.session.add(team)
+            db.session.add(square.ship_team)
             db.session.commit()
             return jsonify(square=square.as_dict(), hit=True)
     else:

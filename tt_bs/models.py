@@ -24,29 +24,19 @@ class Team(db.Model):
     color = db.Column(db.String(32), default="#00FF00")
     game_name = db.Column(db.String(255), db.ForeignKey('game.name'), primary_key=True)
     game = db.relationship("Game", foreign_keys=[game_name], back_populates="teams")
+    score = db.Column(db.Integer, default=0)
 
-    def __init__(self, game, name="", color=None):
+    def __init__(self, game, name="", color=None, score=0):
         self.game = game
         self.name = name
+        self.score = score
         if color:
             self.color = color
-
-    @hybrid_property
-    def points(self):
-        n = 0
-        for s in self.ships:
-            if not s.shot_team:
-                n += 1
-        for s in self.shots:
-            if s.ship_team:
-                n += 1
-
-        return n
 
     def as_dict(self):
         return {
             'name': self.name,
-            'points': self.points,
+            'points': self.score,
             'color': self.color
         }
 
